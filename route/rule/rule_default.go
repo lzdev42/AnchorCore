@@ -123,13 +123,13 @@ func NewDefaultRule(ctx context.Context, logger log.ContextLogger, options optio
 		rule.allItems = append(rule.allItems, item)
 	}
 	if len(options.Geosite) > 0 {
-		return nil, E.New("geosite database is deprecated in sing-box 1.8.0 and removed in sing-box 1.12.0")
+		return nil, E.New("geosite database is deprecated in anchor 1.8.0 and removed in anchor 1.12.0")
 	}
 	if len(options.SourceGeoIP) > 0 {
-		return nil, E.New("geoip database is deprecated in sing-box 1.8.0 and removed in sing-box 1.12.0")
+		return nil, E.New("geoip database is deprecated in anchor 1.8.0 and removed in anchor 1.12.0")
 	}
 	if len(options.GeoIP) > 0 {
-		return nil, E.New("geoip database is deprecated in sing-box 1.8.0 and removed in sing-box 1.12.0")
+		return nil, E.New("geoip database is deprecated in anchor 1.8.0 and removed in anchor 1.12.0")
 	}
 	if len(options.SourceIPCIDR) > 0 {
 		item, err := NewIPCIDRItem(true, options.SourceIPCIDR)

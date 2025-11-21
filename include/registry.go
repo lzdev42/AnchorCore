@@ -141,12 +141,12 @@ func ServiceRegistry() *service.Registry {
 
 func registerStubForRemovedInbounds(registry *inbound.Registry) {
 	inbound.Register[option.ShadowsocksInboundOptions](registry, C.TypeShadowsocksR, func(ctx context.Context, router adapter.Router, logger log.ContextLogger, tag string, options option.ShadowsocksInboundOptions) (adapter.Inbound, error) {
-		return nil, E.New("ShadowsocksR is deprecated and removed in sing-box 1.6.0")
+		return nil, E.New("ShadowsocksR is deprecated and removed in anchor 1.6.0")
 	})
 }
 
 func registerStubForRemovedOutbounds(registry *outbound.Registry) {
 	outbound.Register[option.ShadowsocksROutboundOptions](registry, C.TypeShadowsocksR, func(ctx context.Context, router adapter.Router, logger log.ContextLogger, tag string, options option.ShadowsocksROutboundOptions) (adapter.Outbound, error) {
-		return nil, E.New("ShadowsocksR is deprecated and removed in sing-box 1.6.0")
+		return nil, E.New("ShadowsocksR is deprecated and removed in anchor 1.6.0")
 	})
 }
