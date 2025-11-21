@@ -226,12 +226,12 @@ jobs:
           go run ./cmd/internal/build_anchor -target android
       - name: Archive Android library
         run: |-
-          zip -9 anchorcore-android.zip anchorcore.aar
+          zip -9 anchorcore.aar.zip anchorcore.aar
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: anchorcore-android
-          path: anchorcore-android.zip
+          path: anchorcore.aar.zip
 
 
   build_apple:
@@ -262,12 +262,12 @@ jobs:
           go run ./cmd/internal/build_anchor -target apple
       - name: Archive Apple framework
         run: |-
-          zip -9 -r anchorcore-apple.zip anchorcore.xcframework
+          zip -9 -r anchorcore.xcframework.zip anchorcore.xcframework
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: anchorcore-apple
-          path: anchorcore-apple.zip
+          path: anchorcore.xcframework.zip
   upload:
     name: Upload builds
     if: "!failure() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))"
@@ -298,25 +298,41 @@ jobs:
           go install -v .
       - name: Set tag
         run: |-
-          git ls-remote --exit-code --tags origin v${{ needs.calculate_version.outputs.version }} || echo "PUBLISHED=false" >> "$GITHUB_ENV"
-          git tag v${{ needs.calculate_version.outputs.version }} -f
           echo "VERSION=${{ needs.calculate_version.outputs.version }}" >> "$GITHUB_ENV"
+      - name: Delete existing release if exists
+        run: |-
+          # 检查 Release 是否存在并删除
+          RELEASE_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/v${VERSION}" \
+            | jq -r '.id // empty')
+          
+          if [ -n "$RELEASE_ID" ]; then
+            echo "Found existing release with ID: $RELEASE_ID, deleting..."
+            curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
+            echo "Release deleted successfully"
+          else
+            echo "No existing release found"
+          fi
+          
+          # 删除远程 tag（如果存在）
+          if git ls-remote --exit-code --tags origin v${VERSION}; then
+            echo "Deleting existing tag v${VERSION}..."
+            git push origin :refs/tags/v${VERSION} || true
+            echo "Tag deleted successfully"
+          else
+            echo "No existing tag found"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Download builds
         uses: actions/download-artifact@v5
         with:
           path: dist
           merge-multiple: true
       - name: Upload builds
-        if: ${{ env.PUBLISHED == 'false' }}
         run: |-
           export PATH="$PATH:$HOME/go/bin"
           ghr --replace --draft --prerelease -p 5 "v${VERSION}" dist
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Replace builds
-        if: ${{ env.PUBLISHED != 'false' }}
-        run: |-
-          export PATH="$PATH:$HOME/go/bin"
-          ghr --replace -p 5 "v${VERSION}" dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
