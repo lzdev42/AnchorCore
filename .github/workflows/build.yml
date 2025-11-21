@@ -224,11 +224,14 @@ jobs:
           make lib_install
           export PATH="$PATH:$(go env GOPATH)/bin"
           go run ./cmd/internal/build_anchor -target android
+      - name: Archive Android library
+        run: |-
+          zip -9 anchorcore-android.zip anchorcore.aar
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: anchorcore.aar
-          path: anchorcore.aar
+          name: anchorcore-android
+          path: anchorcore-android.zip
 
 
   build_apple:
@@ -257,11 +260,14 @@ jobs:
           make lib_install
           export PATH="$PATH:$(go env GOPATH)/bin"
           go run ./cmd/internal/build_anchor -target apple
+      - name: Archive Apple framework
+        run: |-
+          zip -9 -r anchorcore-apple.zip anchorcore.xcframework
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: anchorcore.xcframework
-          path: anchorcore.xcframework
+          name: anchorcore-apple
+          path: anchorcore-apple.zip
   upload:
     name: Upload builds
     if: "!failure() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))"
