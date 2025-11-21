@@ -178,11 +178,10 @@ jobs:
           cp ../LICENSE "${DIR_NAME}"
           if [ '${{ matrix.os }}' = 'windows' ]; then
             cp anchor.exe "${DIR_NAME}/anchor.exe"
-            zip -r "${DIR_NAME}.zip" "${DIR_NAME}"
           else
             cp anchor "${DIR_NAME}"
-            tar -czvf "${DIR_NAME}.tar.gz" "${DIR_NAME}"
           fi
+          zip -9 -r "${DIR_NAME}.zip" "${DIR_NAME}"
           rm -r "${DIR_NAME}"
       - name: Cleanup
         run: |
