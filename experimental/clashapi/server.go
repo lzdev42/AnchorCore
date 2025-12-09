@@ -59,6 +59,8 @@ type Server struct {
 	externalUI               string
 	externalUIDownloadURL    string
 	externalUIDownloadDetour string
+
+	watchdog *Watchdog
 }
 
 func NewServer(ctx context.Context, logFactory log.ObservableFactory, options option.ClashAPIOptions) (adapter.ClashServer, error) {
@@ -81,6 +83,7 @@ func NewServer(ctx context.Context, logFactory log.ObservableFactory, options op
 		externalController:       options.ExternalController != "",
 		externalUIDownloadURL:    options.ExternalUIDownloadURL,
 		externalUIDownloadDetour: options.ExternalUIDownloadDetour,
+		watchdog:                 NewWatchdog(logFactory.NewLogger("watchdog")),
 	}
 	s.urlTestHistory = service.FromContext[adapter.URLTestHistoryStorage](ctx)
 	if s.urlTestHistory == nil {
@@ -113,7 +116,7 @@ func NewServer(ctx context.Context, logFactory log.ObservableFactory, options op
 	chiRouter.Use(cors.Handler)
 	chiRouter.Group(func(r chi.Router) {
 		r.Use(authentication(options.Secret))
-		r.Get("/", hello(options.ExternalUI != ""))
+		r.Get("/", hello(s.watchdog, options.ExternalUI != ""))
 		r.Get("/logs", getLogs(logFactory))
 		r.Get("/traffic", traffic(trafficManager))
 		r.Get("/version", version)
@@ -182,6 +185,7 @@ func (s *Server) Start(stage adapter.StartStage) error {
 				}
 			}()
 		}
+		s.watchdog.Start()
 	}
 
 	return nil
@@ -289,8 +293,9 @@ func authentication(serverSecret string) func(next http.Handler) http.Handler {
 	}
 }
 
-func hello(redirect bool) func(w http.ResponseWriter, r *http.Request) {
+func hello(watchdog *Watchdog, redirect bool) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		watchdog.Feed()
 		contentType := r.Header.Get("Content-Type")
 		if !redirect || contentType == "application/json" {
 			render.JSON(w, r, render.M{"hello": "clash"})
