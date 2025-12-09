@@ -130,6 +130,7 @@ func NewServer(ctx context.Context, logFactory log.ObservableFactory, options op
 		r.Mount("/profile", profileRouter())
 		r.Mount("/cache", cacheRouter(ctx))
 		r.Mount("/dns", dnsRouter(s.dnsRouter))
+		r.Post("/watchdog", watchdogHandler(s.watchdog))
 
 		s.setupMetaAPI(r)
 	})
@@ -302,6 +303,15 @@ func hello(watchdog *Watchdog, redirect bool) func(w http.ResponseWriter, r *htt
 		} else {
 			http.Redirect(w, r, "/ui/", http.StatusTemporaryRedirect)
 		}
+	}
+}
+
+func watchdogHandler(watchdog *Watchdog) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		active := r.URL.Query().Get("active") == "true"
+		watchdog.SetEnabled(active)
+		render.Status(r, http.StatusOK)
+		render.JSON(w, r, render.M{"status": "ok", "enabled": active})
 	}
 }
 
